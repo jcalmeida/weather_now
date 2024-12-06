@@ -1,0 +1,22 @@
+PODS:
+  - FlutterMacOS (1.0.0)
+  - geolocator_apple (1.2.0):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - geolocator_apple (from `Flutter/ephemeral/.symlinks/plugins/geolocator_apple/macos`)
+
+EXTERNAL SOURCES:
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  geolocator_apple:
+    :path: Flutter/ephemeral/.symlinks/plugins/geolocator_apple/macos
+
+SPEC CHECKSUMS:
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  geolocator_apple: 72a78ae3f3e4ec0db62117bd93e34523f5011d58
+
+PODFILE CHECKSUM: 94f085a4cee977c1b5ffff7ecc6fb6dfafe64158
+
+COCOAPODS: 1.16.2
