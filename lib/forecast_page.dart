@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'weather_service.dart';
+import 'hourly_forecast_page.dart';
 
 class ForecastPage extends StatefulWidget {
   final WeatherService weatherService;
@@ -129,63 +130,84 @@ class _ForecastPageState extends State<ForecastPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _getWeatherIcon(weather['main']),
-                              size: 40,
-                              color: Theme.of(context).primaryColor,
+                      child: InkWell(
+                        onTap: () {
+                          final dateStr = DateFormat('yyyy-MM-dd').format(date);
+                          final hourlyForecasts = _forecastData!['list'].where((item) {
+                            final itemDate = DateTime.fromMillisecondsSinceEpoch(item['dt'] * 1000);
+                            return DateFormat('yyyy-MM-dd').format(itemDate) == dateStr;
+                          }).toList();
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HourlyForecastPage(
+                                hourlyForecasts: hourlyForecasts,
+                                city: widget.city,
+                                date: date,
+                              ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _getWeatherIcon(weather['main']),
+                                size: 40,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      date.day == DateTime.now().day
+                                          ? 'Today'
+                                          : DateFormat('EEEE, MMM d').format(date),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      weather['description'].toString().toUpperCase(),
+                                      style: TextStyle(
+                                        color: Theme.of(context).textTheme.bodySmall?.color,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    date.day == DateTime.now().day
-                                        ? 'Today'
-                                        : DateFormat('EEEE, MMM d').format(date),
-                                    style: const TextStyle(
+                                    '↑${forecast['temp_max'].round()}°C',
+                                    style: TextStyle(
+                                      fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 18,
+                                      color: Theme.of(context).colorScheme.error,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    weather['description'].toString().toUpperCase(),
+                                    '↓${forecast['temp_min'].round()}°C',
                                     style: TextStyle(
-                                      color: Theme.of(context).textTheme.bodySmall?.color,
-                                      fontSize: 14,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '↑${forecast['temp_max'].round()}°C',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '↓${forecast['temp_min'].round()}°C',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -206,7 +228,9 @@ class _ForecastPageState extends State<ForecastPage> {
     for (var forecast in _forecastData!['list']) {
       final date = DateTime.fromMillisecondsSinceEpoch(forecast['dt'] * 1000);
       final dateStr = DateFormat('yyyy-MM-dd').format(date);
-      final temp = forecast['main']['temp'] as double;
+      final temp = (forecast['main']['temp'] is int) 
+          ? (forecast['main']['temp'] as int).toDouble()
+          : forecast['main']['temp'] as double;
       
       // Update max and min temperatures for this day
       maxTemps[dateStr] = (maxTemps[dateStr] ?? temp).compareTo(temp) > 0 

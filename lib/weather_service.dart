@@ -126,17 +126,13 @@ class WeatherService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else if (response.statusCode == 404) {
-        throw WeatherException('Location not found');
+        throw WeatherException('City not found');
       } else {
-        print('Error response: ${response.body}');
-        throw WeatherException('Failed to load forecast data: Status ${response.statusCode}');
+        throw WeatherException('Failed to get forecast data');
       }
     } catch (e) {
       print('Error in getForecastByCity: $e');
-      if (e is WeatherException) {
-        rethrow;
-      }
-      throw WeatherException('Error fetching forecast data: $e');
+      rethrow;
     }
   }
 }

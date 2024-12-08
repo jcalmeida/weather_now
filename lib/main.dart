@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'weather_service.dart';
 import 'forecast_page.dart';
+import 'hourly_forecast_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,6 +36,7 @@ class _WeatherPageState extends State<WeatherPage> {
     apiKey: '8785e9eb67c9502a0bfc71a9a0f3669b',
   );
   Map<String, dynamic>? _weatherData;
+  Map<String, dynamic>? _forecastData;
   String? _error;
   bool _isLoading = false;
   final TextEditingController _cityController = TextEditingController();
@@ -77,10 +80,12 @@ class _WeatherPageState extends State<WeatherPage> {
     try {
       print('Fetching weather data...');
       final weatherData = await _weatherService.getWeather();
+      final forecastData = await _weatherService.getForecastByCity(weatherData['name']);
       print('Weather data received: $weatherData');
       
       setState(() {
         _weatherData = weatherData;
+        _forecastData = forecastData;
         _isLoading = false;
       });
     } catch (e) {
@@ -101,10 +106,12 @@ class _WeatherPageState extends State<WeatherPage> {
     try {
       print('Fetching weather for city: $city');
       final weatherData = await _weatherService.getWeatherByCity(city);
+      final forecastData = await _weatherService.getForecastByCity(city);
       print('Weather data received for $city: $weatherData');
       
       setState(() {
         _weatherData = weatherData;
+        _forecastData = forecastData;
         _isLoading = false;
       });
     } catch (e) {
@@ -230,10 +237,36 @@ class _WeatherPageState extends State<WeatherPage> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Icon(
-                            _getWeatherIcon(_weatherData!['weather'][0]['main']),
-                            size: 70,
-                            color: Theme.of(context).primaryColor,
+                          InkWell(
+                            onTap: () {
+                              if (_forecastData != null) {
+                                final now = DateTime.now();
+                                final next24Hours = now.add(const Duration(hours: 24));
+                                
+                                final hourlyForecasts = _forecastData!['list'].where((item) {
+                                  final itemDate = DateTime.fromMillisecondsSinceEpoch(item['dt'] * 1000);
+                                  return itemDate.isAfter(now) && itemDate.isBefore(next24Hours);
+                                }).toList();
+
+                                print('Next 24 hours forecasts: $hourlyForecasts'); // Debug print
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HourlyForecastPage(
+                                      hourlyForecasts: hourlyForecasts,
+                                      city: _weatherData!['name'],
+                                      date: now,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Icon(
+                              _getWeatherIcon(_weatherData!['weather'][0]['main']),
+                              size: 70,
+                              color: Theme.of(context).primaryColor,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -260,7 +293,7 @@ class _WeatherPageState extends State<WeatherPage> {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.calendar_today),
+                            icon: const Icon(Icons.calendar_month),
                             label: const Text('7-Day Forecast'),
                           ),
                           const SizedBox(height: 20),
