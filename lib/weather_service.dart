@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 class WeatherService {
   static const String baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
+  static const String forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast';
   final String apiKey;
 
   WeatherService({required this.apiKey});
@@ -47,13 +48,18 @@ class WeatherService {
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
+      } else if (response.statusCode == 404) {
+        throw WeatherException('Location not found');
       } else {
         print('Error response: ${response.body}');
-        throw Exception('Failed to load weather data: Status ${response.statusCode}');
+        throw WeatherException('Failed to load weather data: Status ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getWeatherByCity: $e');
-      throw Exception('Error fetching weather data: $e');
+      if (e is WeatherException) {
+        rethrow;
+      }
+      throw WeatherException('Error fetching weather data: $e');
     }
   }
 
@@ -81,4 +87,64 @@ class WeatherService {
       throw Exception('Error fetching weather data: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getForecast(double lat, double lon) async {
+    try {
+      final String fullUrl = '$forecastUrl?lat=$lat&lon=$lon&appid=$apiKey&units=metric';
+      print('Requesting forecast from: $fullUrl');
+
+      final response = await http.get(Uri.parse(fullUrl));
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 404) {
+        throw WeatherException('Location not found');
+      } else {
+        print('Error response: ${response.body}');
+        throw WeatherException('Failed to load forecast data: Status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getForecast: $e');
+      if (e is WeatherException) {
+        rethrow;
+      }
+      throw WeatherException('Error fetching forecast data: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getForecastByCity(String city) async {
+    try {
+      final String fullUrl = '$forecastUrl?q=$city&appid=$apiKey&units=metric';
+      print('Requesting forecast from: $fullUrl');
+
+      final response = await http.get(Uri.parse(fullUrl));
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 404) {
+        throw WeatherException('Location not found');
+      } else {
+        print('Error response: ${response.body}');
+        throw WeatherException('Failed to load forecast data: Status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getForecastByCity: $e');
+      if (e is WeatherException) {
+        rethrow;
+      }
+      throw WeatherException('Error fetching forecast data: $e');
+    }
+  }
+}
+
+class WeatherException implements Exception {
+  final String message;
+  WeatherException(this.message);
+  
+  @override
+  String toString() => message;
 }

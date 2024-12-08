@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'weather_service.dart';
+import 'forecast_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -122,6 +123,7 @@ class _WeatherPageState extends State<WeatherPage> {
         return AlertDialog(
           title: const Text('Enter City Name'),
           content: TextField(
+            autofocus: true,
             controller: _cityController,
             decoration: const InputDecoration(
               hintText: 'e.g., London',
@@ -134,16 +136,24 @@ class _WeatherPageState extends State<WeatherPage> {
             },
           ),
           actions: [
-            TextButton(
+            FilledButton.tonal(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.close, size: 20),
+                  SizedBox(width: 8),
+                  Text('Cancel'),
+                ],
+              ),
             ),
-            TextButton(
+            FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
                 _fetchWeatherByCity(_cityController.text);
               },
-              child: const Text('Search'),
+              icon: const Icon(Icons.search, size: 20),
+              label: const Text('Search'),
             ),
           ],
         );
@@ -172,7 +182,41 @@ class _WeatherPageState extends State<WeatherPage> {
         child: _isLoading
             ? const CircularProgressIndicator()
             : _error != null
-                ? Text('Error: $_error')
+                ? Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 60,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!.contains('Location not found')
+                              ? 'City not found. Please check the spelling and try again.'
+                              : 'Unable to fetch weather data.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            if (_error!.contains('Location not found')) {
+                              _showSearchDialog();
+                            } else if (_cityController.text.isNotEmpty) {
+                              _fetchWeatherByCity(_cityController.text);
+                            } else {
+                              _fetchWeatherByLocation();
+                            }
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try Again'),
+                        ),
+                      ],
+                    ),
+                  )
                 : _weatherData == null
                     ? const Text('No weather data available')
                     : Column(
@@ -199,10 +243,25 @@ class _WeatherPageState extends State<WeatherPage> {
                           const SizedBox(height: 10),
                           Text(
                             '${_weatherData!['weather'][0]['description']}'.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w500,
+                            style: TextStyle(
+                              color: Theme.of(context).textTheme.bodySmall?.color,
                             ),
+                          ),
+                          const SizedBox(height: 32),
+                          FilledButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ForecastPage(
+                                    weatherService: _weatherService,
+                                    city: _weatherData!['name'],
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.calendar_today),
+                            label: const Text('7-Day Forecast'),
                           ),
                           const SizedBox(height: 20),
                           Row(
